@@ -1,0 +1,3 @@
+/Users/matthewconlan/CLionProjects/Creating a dynamic array/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/matthewconlan/CLionProjects/Creating a dynamic array/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/matthewconlan/CLionProjects/Creating a dynamic array/cmake-build-debug/CMakeFiles/Creating_a_dynamic_array.dir

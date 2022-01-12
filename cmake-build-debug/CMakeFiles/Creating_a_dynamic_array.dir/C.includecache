@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/matthewconlan/CLionProjects/Creating a dynamic array/main.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+
