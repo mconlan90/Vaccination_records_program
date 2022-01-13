@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#define ARRAY_SIZE = sizeof(Patient);
+
 typedef struct {
     char firstName[11];
     char surname[11];
@@ -19,6 +22,10 @@ void displayMenu();
 void viewAllRecords();
 
 void addRecord();
+
+void editRecord();
+
+void editStudentNum(int num);
 
 void loadData();
 
@@ -44,7 +51,7 @@ int main() {
                 break;
             case 3:
                 printf("Modify existing record\n");
-                // editRecord();
+                editRecord();
                 break;
             case 4:
                 printf("Sort vaccinated people by name\n");
@@ -75,17 +82,7 @@ int main() {
     } while (menuItem != 10);
 
     // free(pArray);
-    /*
-   How to allocate memory dynamically using malloc
-      int *arr = (int *) malloc(count * sizeof(int));
 
-      for (int i = 0; i < count; i++) {
-          arr[i] = 1;
-      }
-
-      showAll(arr, count);
-      free(arr);
-  */
     return 0;
 }
 
@@ -148,6 +145,117 @@ void addRecord() {
     fclose(fPtr);
 }
 
+void editRecord() {
+    int count = 0, toEdit;
+
+    FILE *fPtr = fopen("records.txt", "r");
+
+    do {
+        fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+               tempRecord.vacVendor,
+               tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+        if (!feof(fPtr)) {
+            count++;
+        }
+    } while (!feof(fPtr));
+
+    fclose(fPtr);
+
+    if (count > 0) {
+        toEdit = 0;
+        while (toEdit < 1 || toEdit > count) {
+            printf("Student no. to edit? Enter number between 1 and %d:\n", count);
+            scanf("%d", &toEdit);
+        }
+        editStudentNum(toEdit);
+    } else {
+        printf("Nothing to edit.\n");
+    }
+    fclose(fPtr);
+}
+
+void editStudentNum(int num) {
+    int i, fileEnd;
+    char tempString[50];
+
+    FILE *fPtr = fopen("records.txt", "r");
+    FILE *fPtr2 = fopen("temp.txt", "w");
+
+    for (i = 1; i < num; i++) {
+        fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+               tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+        fprintf(fPtr2, "\n%s %s %s %s %s %s %s\n",
+                tempRecord.firstName, tempRecord.surname, tempRecord.dob, tempRecord.vacVendor,
+                tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+    }
+
+    fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+           tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+    printf("\nCurrent details in record %d:\n", num);
+    printf("%10s%10s%14s%20s%20s%25s%22s", "First name", "Surname", "D.O.B", "Vaccine vendor",
+           "Vaccination date", "Underlying condition", "Student/Staff ID");
+
+    printf("\n%10s%10s%14s%20s%20s%25s%22s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+           tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+    // Create menu and switch statement to improve usability of this section
+    printf("\n\n** Press enter if you do not wish to edit selected data. **\n");
+    printf("\t\nFirst name: \n");
+    gets(tempString);
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.firstName, tempString);
+    }
+    printf("\tSurname: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.surname, tempString);
+    }
+    printf("\tD.O.B: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.dob, tempString);
+    }
+    printf("\tVaccine Vendor: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.vacVendor, tempString);
+    }
+    printf("\tVaccination Date: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.vacDate, tempString);
+    }
+    printf("\tUnderlying condition: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.underCondition, tempString);
+    }
+    printf("\tStudent/Staff ID: \n");
+    gets(tempString);
+    if (strlen(tempString) > 0) {
+        strcpy(tempRecord.id, tempString);
+    }
+    fprintf(fPtr2, "\n%s %s %s %s %s %s %s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+            tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition,
+            tempRecord.id);
+    do {
+        fileEnd = fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+                         tempRecord.vacVendor,
+                         tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+        if (fileEnd != EOF) {
+            fprintf(fPtr2, "\n%s %s %s %s %s %s %s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
+                    tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition,
+                    tempRecord.id);
+        }
+    } while (fileEnd != EOF);
+
+    fclose(fPtr);
+    fclose(fPtr2);
+
+    remove("records.txt");
+    rename("temp.txt", "records.txt");
+}
+
 void displayMenu() {
     printf("\n1. Add a new person\n");
     printf("2. View vaccination status for all students and staff\n");
@@ -202,11 +310,15 @@ void loadData() {
     fclose(fPtr);
 }
 
+
 /*
- *
- * // Print Array
-for (i = 0; i < sizeof(*pArray); i++) {
-printf("%10s%10s%14s%20s%20s%25s%22s\n", pArray[i].firstName, pArray[i].surname, pArray[i].dob,
-pArray[i].vacVendor, pArray[i].vacDate, pArray[i].underCondition, pArray[i].id);
-}
- */
+How to allocate memory dynamically using malloc
+  int *arr = (int *) malloc(count * sizeof(int));
+
+  for (int i = 0; i < count; i++) {
+      arr[i] = 1;
+  }
+
+  showAll(arr, count);
+  free(arr);
+*/
