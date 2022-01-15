@@ -41,7 +41,7 @@ void editStudentNum(int num);
 
 void percentNonVac();
 
-Patient* loadData(int*);
+Patient *loadData(int *);
 
 void sortVacByName();
 
@@ -97,7 +97,7 @@ int main() {
                 sortVacByDate();
                 break;
             case 7:
-                percentNonVac();
+                percentNonVac(recordArray, recordCount);
                 break;
             case 8:
                 viewSeniorHealthCond();
@@ -117,7 +117,7 @@ int main() {
     return 0;
 }
 
-Patient* loadData(int *countAddress) {
+Patient *loadData(int *countAddress) {
     FILE *fPtr = fopen("records.txt", "r");
 
     if (fPtr != NULL) {
@@ -135,16 +135,23 @@ Patient* loadData(int *countAddress) {
     fgets(buffer, 200, fPtr);
 
     int i = 0;
-    Patient* recordArray = (Patient*)malloc(sizeof(*recordArray));
+    Patient *recordArray = (Patient *) malloc(sizeof(*recordArray));
     // recordArray = (Patient *)malloc(sizeof(Patient) * (i + 1));
-
+    char str1[] = "(none)";
     while (!feof(fPtr)) {
         Patient *record = recordArray + i;
         sscanf(buffer, "%s%s%s%s%s%s%s", record->firstName, record->surname, record->dob, record->vacVendor,
                record->vacDate, record->underCondition, record->id);
+        if (strcmp(str1, recordArray[i].vacDate) == false) {
+            record->isVaccinated = false;
+        }
+        else {
+            record->isVaccinated = true;
+        }
         i++;
         fgets(buffer, 200, fPtr);
     }
+
     *countAddress = i;
     fclose(fPtr);
     return recordArray;
@@ -153,12 +160,16 @@ Patient* loadData(int *countAddress) {
 
 void viewAllRecords(Patient *recordArray, int recordCount) {
     // Display array in record format
-    printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
-           "Vaccination date", "Underlying condition", "Student/Staff ID");
+    printf("%10s%14s%14s%20s%20s%25s%22s%10s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
+           "Vaccination date", "Underlying condition", "Student/Staff ID", "Is vaccinated?");
     for (int i = 0; i < recordCount; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
-   }
+        char* isVaccinated = " ";
+        if (recordArray[i].isVaccinated) {
+            isVaccinated = "*";
+        }
+        printf("%10s%14s%14s%20s%20s%25s%22s%10s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
+               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id, isVaccinated);
+    }
 }
 
 
@@ -523,24 +534,14 @@ const char *printVendor(enum Vendor vaccine) {
     }
 }
 
-void percentNonVac() {
-    int fileEnd = 0, vax = 0, noVax = -1, count = -1;
-
-    FILE *fPtr = fopen("records.txt", "r");
-
-    while (fileEnd != EOF) {
-        fileEnd = fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-                         tempRecord.vacVendor,
-                         tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-        char str1[] = "(none)";
-        if (strcmp(str1, tempRecord.vacDate) == false) {
+void percentNonVac(Patient *recordArray, int recordCount) {
+    int noVax = 0;
+    for (int i = 0; i < recordCount; i++) {
+        if (!recordArray[i].isVaccinated) {
             noVax++;
-        } else {
-            vax++;
         }
-        count++;
     }
-    float percentNoVax = (float) noVax / (float) count * 100;
+    float percentNoVax = (float) noVax / (float) recordCount * 100;
     printf("\t\n** Percentage of unvaccinated people: %.2f%% **\n", percentNoVax);
 }
 
@@ -564,14 +565,14 @@ void viewSeniorHealthCond() {
 }
 
 void writeToFile(Patient *recordArray, int recordCount) {
-    FILE* fPtr = fopen("records.txt", "w");
+    FILE *fPtr = fopen("records.txt", "w");
 
     for (int i = 0; i < recordCount; i++) {
         fprintf(fPtr, "%s %s %s %s %s %s %s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
+                recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
     }
     fclose(fPtr);
-    printf("Successfully wrote %d records to file.\n", recordCount);
+    printf("** Successfully wrote %d records to file. **\n", recordCount);
 }
 
 /*
