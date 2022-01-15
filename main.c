@@ -3,6 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define STR_LEN 30
 
@@ -63,6 +64,8 @@ void reformatDate(char *);
 
 void removeSpecial(char *, size_t);
 
+int calculateAge(char *);
+
 int main() {
     int menuItem;
     int recordCount = 0;
@@ -100,7 +103,7 @@ int main() {
                 percentNonVac(recordArray, recordCount);
                 break;
             case 8:
-                viewSeniorHealthCond();
+                viewSeniorHealthCond(recordArray, recordCount);
                 break;
             case 9:
                 writeToFile(recordArray, recordCount);
@@ -137,12 +140,11 @@ Patient *loadData(int *countAddress) {
     int i = 0;
     Patient *recordArray = (Patient *) malloc(sizeof(*recordArray));
     // recordArray = (Patient *)malloc(sizeof(Patient) * (i + 1));
-    char str1[] = "(none)";
     while (!feof(fPtr)) {
         Patient *record = recordArray + i;
         sscanf(buffer, "%s%s%s%s%s%s%s", record->firstName, record->surname, record->dob, record->vacVendor,
                record->vacDate, record->underCondition, record->id);
-        if (strcmp(str1, recordArray[i].vacDate) == false) {
+        if (strcmp("(none)", recordArray[i].vacDate) == false) {
             record->isVaccinated = false;
         }
         else {
@@ -545,24 +547,18 @@ void percentNonVac(Patient *recordArray, int recordCount) {
     printf("\t\n** Percentage of unvaccinated people: %.2f%% **\n", percentNoVax);
 }
 
-void viewSeniorHealthCond() {
-    int fileEnd = 0;
-
-    FILE *fPtr = fopen("records.txt", "r");
-
+void viewSeniorHealthCond(Patient *recordArray, int recordCount) {
     printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID");
-
-    while (fileEnd != EOF) {
-        fileEnd = fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-                         tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-        char str1[] = "None";
-        if (strcmp(str1, tempRecord.underCondition) != false) {
-            printf("%10s%14s%14s%20s%20s%25s%22s\n", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-                   tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+    for (int i = 0; i < recordCount; i++) {
+        if ((strcmp("None", recordArray[i].underCondition) != false) && (calculateAge(recordArray[i].dob) >= 65)) {
+                printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
+                       recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
         }
     }
 }
+
+/* printf("DOB %s Age today: %d\n", "16/01/2000", calculateAge("16/01/2000")); */
 
 void writeToFile(Patient *recordArray, int recordCount) {
     FILE *fPtr = fopen("records.txt", "w");
@@ -574,6 +570,37 @@ void writeToFile(Patient *recordArray, int recordCount) {
     fclose(fPtr);
     printf("** Successfully wrote %d records to file. **\n", recordCount);
 }
+
+int calculateAge(char *dob) {
+    time_t t;
+    int currentYear, currentMonth, currentDay;
+    struct tm *timeFormat;
+    time(&t);
+    timeFormat = localtime(&t);
+    currentYear = timeFormat->tm_year + 1900;
+    currentMonth = timeFormat->tm_mon + 1;
+    currentDay = timeFormat->tm_mday;
+
+    // printf("Current year: %d\n", currentYear);
+
+    int birthDay, birthMonth, birthYear;
+    sscanf(dob, "%2d/%2d/%4d", &birthDay, &birthMonth, &birthYear);
+    int age = currentYear - birthYear;
+    if (currentMonth < birthMonth) {
+        age--;
+    }
+    if (currentMonth == birthMonth) {
+        if (currentDay < birthDay) {
+            age--;
+        }
+    }
+    return age;
+
+    // printf("Current time: %s\n", ctime(&t));
+    // return 0;
+}
+
+// Sat Jan 15 13:25:58 2022
 
 /*
 How to allocate memory dynamically using malloc
