@@ -41,7 +41,7 @@ void editStudentNum(int num);
 
 void percentNonVac();
 
-void loadData();
+Patient* loadData(int*);
 
 void sortVacByName();
 
@@ -65,8 +65,7 @@ int main() {
     int menuItem;
     int recordCount = 0;
     printf("Read: %d records\n", recordCount);
-    Patient *recordArray[] = {};
-    loadData(&recordArray, &recordCount);
+    Patient *recordArray = loadData(&recordCount);
    // Patient *record = (Patient *) malloc(sizeof(Patient));
 
 
@@ -121,7 +120,7 @@ int main() {
     return 0;
 }
 
-void loadData(int *countAddress) {
+Patient* loadData(int *countAddress) {
     FILE *fPtr = fopen("records.txt", "r");
 
     if (fPtr != NULL) {
@@ -152,7 +151,8 @@ void loadData(int *countAddress) {
     }
     *countAddress = i;
     fclose(fPtr);
-    viewAllRecords(recordArray, i);
+    return recordArray;
+    // viewAllRecords(recordArray, i);
 }
 
 void viewAllRecords(Patient *recordArray, int recordCount) {
