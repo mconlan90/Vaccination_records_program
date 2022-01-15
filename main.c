@@ -51,6 +51,8 @@ void sortVacByDate();
 
 void viewSeniorHealthCond();
 
+void writeToFile(Patient *, int);
+
 void bubbleSort(char [][STR_LEN], size_t);
 
 void swapStrings(char *, char *);
@@ -64,15 +66,9 @@ void removeSpecial(char *, size_t);
 int main() {
     int menuItem;
     int recordCount = 0;
-    printf("Read: %d records\n", recordCount);
+
     Patient *recordArray = loadData(&recordCount);
-   // Patient *record = (Patient *) malloc(sizeof(Patient));
-
-
-    printf("Size of Patient: %zu bytes\n", sizeof(Patient));
-    printf("Size of Bool: %zu bytes\n", sizeof(bool));
-    printf("Size of Enum: %zu bytes\n", sizeof(Pfizer));
-
+    printf("Read: %d records\n", recordCount);
 
     do {
         displayMenu();
@@ -107,8 +103,9 @@ int main() {
                 viewSeniorHealthCond();
                 break;
             case 9:
-                printf("Exit and save to file\n");
-                // writeToFile();
+                writeToFile(recordArray, recordCount);
+                printf("Goodbye!\n");
+                menuItem = 10;
                 break;
             default:
                 break;
@@ -142,12 +139,11 @@ Patient* loadData(int *countAddress) {
     // recordArray = (Patient *)malloc(sizeof(Patient) * (i + 1));
 
     while (!feof(fPtr)) {
-
         Patient *record = recordArray + i;
         sscanf(buffer, "%s%s%s%s%s%s%s", record->firstName, record->surname, record->dob, record->vacVendor,
                record->vacDate, record->underCondition, record->id);
-        fgets(buffer, 200, fPtr);
         i++;
+        fgets(buffer, 200, fPtr);
     }
     *countAddress = i;
     fclose(fPtr);
@@ -156,10 +152,8 @@ Patient* loadData(int *countAddress) {
 }
 
 void viewAllRecords(Patient *recordArray, int recordCount) {
-
-
     // Display array in record format
-    printf("%10s%14s%14s%20s%20s%25s%22s", "First name", "Surname", "D.O.B", "Vaccine vendor",
+    printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID");
     for (int i = 0; i < recordCount; i++) {
         printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
@@ -567,6 +561,17 @@ void viewSeniorHealthCond() {
                    tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
         }
     }
+}
+
+void writeToFile(Patient *recordArray, int recordCount) {
+    FILE* fPtr = fopen("records.txt", "w");
+
+    for (int i = 0; i < recordCount; i++) {
+        fprintf(fPtr, "%s %s %s %s %s %s %s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
+               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
+    }
+    fclose(fPtr);
+    printf("Successfully wrote %d records to file.\n", recordCount);
 }
 
 /*
