@@ -19,50 +19,54 @@ typedef struct {
     bool isVaccinated;
     char underCondition[21];
     char id[11];
-} Patient;
+} Record;
 
 typedef struct {
     unsigned long n;
     void *record;
 } arrSize;
 
-Patient tempRecord;
+Record tempRecord;
 
 const char *printVendor(enum Vendor);
 
 void displayMenu();
 
-void viewAllRecords();
+void viewAllRecords(Record *, int);
 
-void addRecord();
+void addRecord(Record *);
 
-void editRecord();
+void editRecord(Record *, int);
 
 void editStudentNum(int num);
 
-void percentNonVac();
+void percentNonVac(Record *, int);
 
-Patient *loadData(int *);
+Record *loadData(int *);
 
-void sortVacByName();
+void sortVacByName(Record *recordArray, int recordCount);
 
-void sortNonVacByName();
+void swapStructs(Record *, Record *);
 
-void sortVacByDate();
+void sortNonVacByName(Record *recordArray, int recordCount);
 
-void viewSeniorHealthCond();
+void sortVacByDate(Record *recordArray, int recordCount);
 
-void writeToFile(Patient *, int);
+void viewSeniorHealthCond(Record *, int);
+
+void writeToFile(Record *, int);
 
 void bubbleSort(char [][STR_LEN], size_t);
 
 void swapStrings(char *, char *);
 
+bool isInOrder(char *a, char *b);
+
 void swapChars(char *, char *);
 
 void reformatDate(char *);
 
-void removeSpecial(char *, size_t);
+long removeSpecial(char *dob);
 
 int calculateAge(char *);
 
@@ -70,9 +74,58 @@ int main() {
     int menuItem;
     int recordCount = 0;
 
-    Patient *recordArray = loadData(&recordCount);
+    Record *recordArray = loadData(&recordCount);
     printf("Read: %d records\n", recordCount);
+/*
+    // printf("New date: %ld\n", removeSpecial(recordArray[0].firstName));
 
+    // printf("\tThe first character of my surname is: %c\n", recordArray[0].surname[0]);
+    //  printf("\tThe first number in my date of birth is: %c\n", recordArray[0].dob[0]);
+
+     if (recordArray[0].surname[0] > recordArray[1].surname[0]) {
+        printf("True.\n");
+    }
+    else {
+        printf("False.\n");
+    }
+
+
+    // The below function is working to an extent - It is at least targeting the correct elements
+    // swap function is not quite correct.
+    // Once this is done, it should be easy to do ALL the bubble sort algorithms.
+    // The function is still breaking when run, but seems to be closer than before.
+
+    for (int pass = 1; pass < recordCount; pass++) {
+        // printf("Pass: %d", pass);
+        for (int rows = 0; rows < recordCount; rows++) {
+            // printf("Row: %d", rows);
+            for (int string = 0; string < sizeof(recordArray->surname); string++) {
+                // printf("Comparing: %s with %s", &recordArray[rows].surname[string], &recordArray[rows + 1].surname[string]);
+                if (recordArray[rows].surname[string] > recordArray[rows + 1].surname[string]) {
+                    /*
+                       // Swapping individual characters
+                       char hold;
+                       hold = recordArray[rows + 1].surname[string];
+                       recordArray[rows + 1].surname[string] = recordArray[rows].surname[string];
+                       recordArray[rows].surname[string] = hold;
+
+                    // Swapping strings - I think this is the way to do it. Find out more!!
+                    char holdString[15];
+                    strcpy(holdString, recordArray[rows + 1].surname);
+                    strcpy(recordArray[rows + 1].surname, recordArray[rows].surname);
+                    strcpy(recordArray[rows + 1].surname, holdString);
+                    // printf("Swapped %c with %c.\n", recordArray[rows].surname[string], recordArray[rows + 1].surname[string]);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < recordCount; i++) {
+        printf("%s %s %s %s %s %s %s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
+               printVendor(recordArray[i].vaccine), recordArray[i].vacDate, recordArray[i].underCondition,
+               recordArray[i].id);
+    }
+
+*/
     do {
         displayMenu();
         menuItem = 0;
@@ -82,22 +135,22 @@ int main() {
         }
         switch (menuItem) {
             case 1:
-                addRecord();
+                addRecord(recordArray);
                 break;
             case 2:
                 viewAllRecords(recordArray, recordCount);
                 break;
             case 3:
-                editRecord();
+                editRecord(recordArray, recordCount);
                 break;
             case 4:
-                sortVacByName();
+                sortVacByName(recordArray, recordCount);
                 break;
             case 5:
-                printf("Sort non-vaccinated people by name\n");
-                // sortNonVaxName();
+                sortNonVacByName(recordArray, recordCount);
+                break;
             case 6:
-                sortVacByDate();
+                sortVacByDate(recordArray, recordCount);
                 break;
             case 7:
                 percentNonVac(recordArray, recordCount);
@@ -120,7 +173,7 @@ int main() {
     return 0;
 }
 
-Patient *loadData(int *countAddress) {
+Record *loadData(int *countAddress) {
     FILE *fPtr = fopen("records.txt", "r");
 
     if (fPtr != NULL) {
@@ -138,16 +191,15 @@ Patient *loadData(int *countAddress) {
     fgets(buffer, 200, fPtr);
 
     int i = 0;
-    Patient *recordArray = (Patient *) malloc(sizeof(*recordArray));
-    // recordArray = (Patient *)malloc(sizeof(Patient) * (i + 1));
+    Record *recordArray = (Record *) malloc(sizeof(*recordArray));
+    // recordArray = (Record *)malloc(sizeof(Record) * (i + 1));
     while (!feof(fPtr)) {
-        Patient *record = recordArray + i;
+        Record *record = recordArray + i;
         sscanf(buffer, "%s%s%s%s%s%s%s", record->firstName, record->surname, record->dob, record->vacVendor,
                record->vacDate, record->underCondition, record->id);
         if (strcmp("(none)", recordArray[i].vacDate) == false) {
             record->isVaccinated = false;
-        }
-        else {
+        } else {
             record->isVaccinated = true;
         }
         i++;
@@ -160,107 +212,81 @@ Patient *loadData(int *countAddress) {
     // viewAllRecords(recordArray, i);
 }
 
-void viewAllRecords(Patient *recordArray, int recordCount) {
+void viewAllRecords(Record *recordArray, int recordCount) {
     // Display array in record format
     printf("%10s%14s%14s%20s%20s%25s%22s%10s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID", "Is vaccinated?");
     for (int i = 0; i < recordCount; i++) {
-        char* isVaccinated = " ";
+        char *isVaccinated = " ";
         if (recordArray[i].isVaccinated) {
             isVaccinated = "*";
         }
-        printf("%10s%14s%14s%20s%20s%25s%22s%10s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id, isVaccinated);
+        printf("%10s%14s%14s%20s%20s%25s%22s%10s\n", recordArray[i].firstName, recordArray[i].surname,
+               recordArray[i].dob,
+               recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id,
+               isVaccinated);
     }
 }
 
 
-void addRecord(Patient *recordArray) {
-    int count;
-    printf("How many records would you like to add?\n");
-    scanf("%d", &count);
+void addRecord(Record *recordArray) {
     // Add new record accepts all inputs but doesn't store to array.
-    // Have tried all the below and none have worked so far.
-    // recordArray[i].firstName || record[i]->firstName || record->firstName || recordArray->firstName
-    Patient *record = malloc(sizeof(Patient));
-    for (int i = 0; i < count; i++) {
-        // Patient *record = recordArray + i;
-        printf("Enter first name:\n");
-        scanf("%s", tempRecord.firstName);
-        strcpy(record->firstName, tempRecord.firstName);
-        printf("%s", record->firstName);
-        printf("Enter surname:\n");
-        scanf("%s", tempRecord.surname);
-        strcpy(record->surname, tempRecord.surname);
-        printf("%s", record->surname);
-        printf("Enter date of birth:\n");
-        scanf("%s", tempRecord.dob);
-        strcpy(record->dob, tempRecord.dob);
-        printf("%s", record->dob);
-        printf("Select vendor of person's vaccine:\n");
-        printf("\t1. Astra Zeneca\n");
-        printf("\t2. Pfizer\n");
-        printf("\t3. Janssen\n");
-        printf("\t4. Moderna\n");
-        printf("\t5. Unvaccinated\n");
+    Record *rPtr = realloc(&rPtr, 2 * sizeof(Record));
+    // Record *record = recordArray + i;
+    printf("Enter first name:\n");
+    scanf("%s", rPtr->firstName);
 
-        int menuItem;
-        scanf("%d", &menuItem);
-        // Program breaking at switch statement
-        switch (menuItem) {
-            case 1:
-                record->vaccine = Astra_Zeneca;
-                break;
-            case 2:
-                record->vaccine = Pfizer;
-                break;
-            case 3:
-                record->vaccine = Janssen;
-                break;
-            case 4:
-                record->vaccine = Moderna;
-                break;
-            case 5:
-                record->vaccine = Unvaccinated;
-            default:
-                break;
-        }
-        if (record->vaccine != Unvaccinated) {
-            printf("Enter date of vaccination:\n");
-            scanf("%s", tempRecord.vacDate);
-            strcpy(record->vacDate, tempRecord.vacDate);
-        }
-        printf("Enter underlying health conditions:\n");
-        scanf("%s", tempRecord.underCondition);
-        strcpy(record->underCondition, tempRecord.underCondition);
-        printf("Enter student/staff ID:\n");
-        scanf("%s", tempRecord.id);
-        strcpy(record->id, tempRecord.id);
+    printf("Enter surname:\n");
+    scanf("%s", rPtr->surname);
+
+    printf("Enter date of birth:\n");
+    scanf("%s", rPtr->dob);
+
+    printf("Select vendor of person's vaccine:\n");
+    printf("\t1. Astra Zeneca\n");
+    printf("\t2. Pfizer\n");
+    printf("\t3. Janssen\n");
+    printf("\t4. Moderna\n");
+    printf("\t5. Unvaccinated\n");
+
+    int menuItem;
+    scanf("%d", &menuItem);
+    // Program breaking at switch statement
+    switch (menuItem) {
+        case 1:
+            rPtr->vaccine = Astra_Zeneca;
+            break;
+        case 2:
+            rPtr->vaccine = Pfizer;
+            break;
+        case 3:
+            rPtr->vaccine = Janssen;
+            break;
+        case 4:
+            rPtr->vaccine = Moderna;
+            break;
+        case 5:
+            rPtr->vaccine = Unvaccinated;
+        default:
+            break;
     }
+    if (rPtr->vaccine != Unvaccinated) {
+        printf("Enter date of vaccination:\n");
+        scanf("%s", rPtr->vacDate);
+    }
+    printf("Enter underlying health conditions:\n");
+    scanf("%s", rPtr->underCondition);
+    printf("Enter student/staff ID:\n");
+    scanf("%s", rPtr->id);
 
     for (int i = 0; i < 1; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s\n", record->firstName, record->surname, record->dob,
-               record->vacVendor, record->vacDate, record->underCondition, record->id);
+        printf("%10s%14s%14s%20s%20s%25s%22s\n", rPtr->firstName, rPtr->surname, rPtr->dob,
+               rPtr->vacVendor, rPtr->vacDate, rPtr->underCondition, rPtr->id);
     }
 }
 
-/*
-if (record->vaccine != Unvaccinated) {
-    fprintf(fPtr,
-            "\n%s %s %s %s %s %s %s",
-            record->firstName, record->surname, record->dob, printVendor(record->vaccine),
-            record->vacDate, record->underCondition, record->id);
-} else {
-    fprintf(fPtr, "\n%s %s %s %s (none) %s %s",
-            record->firstName, record->surname, record->dob, printVendor(record->vaccine),
-            record->underCondition, record->id);
-}
-}
-fclose(fPtr);
- */
 
-
-void editRecord(Patient *recordArray) {
+void editRecord(Record *recordArray, int recordCount) {
     int count = 0, toEdit;
 
     FILE *fPtr = fopen("records.txt", "r");
@@ -388,121 +414,104 @@ void displayMenu() {
     printf("9. Exit and save to file\n");
 }
 
-void sortVacByName() {
-    FILE *fPtr = fopen("records.txt", "r");
+void sortVacByName(Record *recordArray, int recordCount) {
 
-    char buffer[200];
-    fgets(buffer, 200, fPtr);
-
-    int i = 0;
-    // Patient* pArray = (Patient*)malloc(sizeof(*pArray));
-    Patient *pArray = (Patient *) malloc(sizeof(Patient));
-
-    while (!feof(fPtr)) {
-        Patient *p = pArray + i;
-        sscanf(buffer, "%s%s%s%s%s%s%s", p->firstName, p->surname, p->dob, p->vacVendor,
-               p->vacDate, p->underCondition, p->id);
-        fgets(buffer, 200, fPtr);
-        i++;
+    for (int pass = 0; pass < recordCount - 1; pass++) {
+        for (int i = 0; i < recordCount - pass - 1; i++) {
+            printf("Comparing %d: %s with %s\n", i, recordArray[i].surname, recordArray[i + 1].surname);
+            if (!isInOrder(recordArray[i].surname, recordArray[i + 1].surname)) {
+                swapStructs(&recordArray[i], &recordArray[i + 1]);
+            }
+        }
     }
+    for (int i = 0; i < recordCount; i++) {
+        printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
+               recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
+               recordArray[i].id, recordArray[i].isVaccinated);
+    }
+}
 
+void sortNonVacByName(Record *recordArray, int recordCount) {
 
-    for (int pass = 1; pass < 10; pass++) {
-        for (size_t j = 0; j < 10 - pass; ++j) {
-            for (size_t k = 0; k < 11; ++k) {
-                if (&pArray[j].surname[k] < &pArray[j + 1].surname[k]) {
+    for (int pass = 0; pass < recordCount; pass++) {
+        for (size_t i = 0; i < recordCount - pass; i++) {
+            for (size_t j = 0; j < 11; j++) {
+                if (recordArray[i].surname[j] < recordArray[i + 1].surname[j]) {
                     break;
                 }
-                if (&pArray[j].surname[k] > &pArray[j + 1].surname[k]) {
-                    swapStrings(&pArray[j].surname[k], &pArray[j + 1].surname[k]);
+                if (recordArray[i].surname[j] > recordArray[i + 1].surname[j]) {
+                    swapStructs(&recordArray[i], &recordArray[i + 1]);
                     break;
                 }
             }
         }
     }
-    int n = i;
-    printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
-           "Vaccination date", "Underlying condition", "Student/Staff ID");
-    for (i = 0; i < n; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s\n", pArray[i].firstName, pArray[i].surname, pArray[i].dob,
-               printVendor(pArray[i].vaccine), pArray[i].vacDate, pArray[i].underCondition, pArray[i].id);
+
+    for (int i = 0; i < recordCount; i++) {
+        printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
+               recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
+               recordArray[i].id, recordArray[i].isVaccinated);
     }
 }
 
+void sortVacByDate(Record *recordArray, int recordCount) {
 
-// void sortNonVacByName();
 
-void sortVacByDate() {
-    FILE *fPtr = fopen("records.txt", "r");
-
-    char buffer[200];
-    fgets(buffer, 200, fPtr);
-
-    int i = 0;
-    // Patient* pArray = (Patient*)malloc(sizeof(*pArray));
-    Patient *pArray = (Patient *) malloc(sizeof(Patient));
-
-    while (!feof(fPtr)) {
-        // Patient *p = pArray + i;
-        Patient *p = &pArray[i];
-        sscanf(buffer, "%s%s%s%s%s%s%s", p->firstName, p->surname, p->dob, p->vacVendor,
-               p->vacDate, p->underCondition, p->id);
-        fgets(buffer, 200, fPtr);
-        i++;
+    for (int i = 1; i < recordCount; i++) {
+        removeSpecial(recordArray[i].dob);
+        reformatDate(recordArray[i].dob);
     }
 
-    fclose(fPtr);
-
-    for (int j = 1; j < 17; j++) {
-        removeSpecial(pArray[j].dob, 11);
-        reformatDate(pArray[j].dob);
-    }
-
-    /*
     // For Loop is causing problems with the DOBs
-    for (int pass = 1; pass < 10; pass++) {
-        for (size_t j = 0; j < 10 - pass; ++j) {
-            for (size_t k = 0; k < 11; ++k) {
-                printf("\t\t\nComparing: %c and %c\n", pArray[j].dob[k], pArray[j + 1].dob[k]);
-                if (pArray[j].dob[k] < pArray[j + 1].dob[k]) {
+    for (int pass = 1; pass < recordCount; pass++) {
+        for (size_t i = 0; i < recordCount - pass; ++i) {
+            for (size_t j = 0; j < 11; ++j) {
+                printf("\t\t\nComparing: %c and %c\n", recordArray[i].dob[j], recordArray[i + 1].dob[j]);
+                if (recordArray[i].dob[j] < recordArray[i + 1].dob[j]) {
                     break;
                 }
-                if (pArray[j].dob[k] > pArray[j + 1].dob[k]) {
-                    swapStrings(pArray[j].dob, pArray[j + 1].dob);
+                if (recordArray[i].dob > recordArray[i + 1].dob) {
+                    swapStructs(&recordArray[i], &recordArray[i + 1]);
                     break;
                 }
             }
         }
     }
-     */
-    int n = i;
     printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID");
-    for (i = 0; i < n; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s\n", pArray[i].firstName, pArray[i].surname, pArray[i].dob,
-               printVendor(pArray[i].vaccine), pArray[i].vacDate, pArray[i].underCondition, pArray[i].id);
+    for (int i = 0; i < recordCount; i++) {
+        printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
+               printVendor(recordArray[i].vaccine), recordArray[i].vacDate, recordArray[i].underCondition,
+               recordArray[i].id);
     }
 }
 
-void removeSpecial(char *pArray, size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        if (ispunct(pArray[i])) {
-            for (size_t j = i; j < size; j++) {
-                pArray[j] = pArray[j + 1];
-            }
-            i--;
-            size--;
+bool isInOrder(char *a, char *b) {
+    for (size_t j = 0; j < 15; j++) {
+        if (a[j] < b[j]) {
+            return true;
+        }
+        if (a[j] > b[j]) {
+            return false;
         }
     }
+    return true;
 }
 
-void reformatDate(char *pArray) {
-    swapChars(&pArray[0], &pArray[6]);
-    swapChars(&pArray[1], &pArray[7]);
-    swapChars(&pArray[2], &pArray[4]);
-    swapChars(&pArray[3], &pArray[5]);
-    swapChars(&pArray[0], &pArray[2]);
-    swapChars(&pArray[1], &pArray[3]);
+long removeSpecial(char *dob) {
+    long newDate;
+    char *ptr;
+    newDate = strtol(dob, &ptr, 10);
+    return newDate;
+}
+
+void reformatDate(char *dob) {
+    swapChars(&dob[0], &dob[6]);
+    swapChars(&dob[1], &dob[7]);
+    swapChars(&dob[2], &dob[4]);
+    swapChars(&dob[3], &dob[5]);
+    swapChars(&dob[0], &dob[2]);
+    swapChars(&dob[1], &dob[3]);
 }
 
 void swapChars(char *elem1Ptr, char *elem2Ptr) {
@@ -512,8 +521,24 @@ void swapChars(char *elem1Ptr, char *elem2Ptr) {
     *elem2Ptr = hold;
 }
 
+
+void swapStructs(Record *structPtr1, Record *structPtr2) {
+    printf("\tSwapping: %s and %s\n", structPtr1->surname, structPtr2->surname);
+    swapStrings(structPtr1->firstName, structPtr2->firstName);
+    swapStrings(structPtr1->surname, structPtr2->surname);
+    swapStrings(structPtr1->dob, structPtr2->dob);
+    swapStrings(structPtr1->vacVendor, structPtr2->vacVendor);
+    swapStrings(structPtr1->vacDate, structPtr2->vacDate);
+    swapStrings(structPtr1->underCondition, structPtr2->underCondition);
+    swapStrings(structPtr1->id, structPtr2->id);
+    bool hold = NULL;
+    hold = structPtr1->isVaccinated;
+    structPtr1->isVaccinated = structPtr2->isVaccinated;
+    structPtr2->isVaccinated = hold;
+}
+
 void swapStrings(char *elemPtr1, char *elemPtr2) {
-    char hold[STR_LEN];
+    char hold[30];
     strcpy(hold, elemPtr1);
     strcpy(elemPtr1, elemPtr2);
     strcpy(elemPtr2, hold);
@@ -536,7 +561,7 @@ const char *printVendor(enum Vendor vaccine) {
     }
 }
 
-void percentNonVac(Patient *recordArray, int recordCount) {
+void percentNonVac(Record *recordArray, int recordCount) {
     int noVax = 0;
     for (int i = 0; i < recordCount; i++) {
         if (!recordArray[i].isVaccinated) {
@@ -547,20 +572,19 @@ void percentNonVac(Patient *recordArray, int recordCount) {
     printf("\t\n** Percentage of unvaccinated people: %.2f%% **\n", percentNoVax);
 }
 
-void viewSeniorHealthCond(Patient *recordArray, int recordCount) {
+void viewSeniorHealthCond(Record *recordArray, int recordCount) {
     printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID");
     for (int i = 0; i < recordCount; i++) {
         if ((strcmp("None", recordArray[i].underCondition) != false) && (calculateAge(recordArray[i].dob) >= 65)) {
-                printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-                       recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
+            printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname,
+                   recordArray[i].dob,
+                   recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition, recordArray[i].id);
         }
     }
 }
 
-/* printf("DOB %s Age today: %d\n", "16/01/2000", calculateAge("16/01/2000")); */
-
-void writeToFile(Patient *recordArray, int recordCount) {
+void writeToFile(Record *recordArray, int recordCount) {
     FILE *fPtr = fopen("records.txt", "w");
 
     for (int i = 0; i < recordCount; i++) {
@@ -595,21 +619,4 @@ int calculateAge(char *dob) {
         }
     }
     return age;
-
-    // printf("Current time: %s\n", ctime(&t));
-    // return 0;
 }
-
-// Sat Jan 15 13:25:58 2022
-
-/*
-How to allocate memory dynamically using malloc
-  int *arr = (int *) malloc(count * sizeof(int));
-
-  for (int i = 0; i < count; i++) {
-      arr[i] = 1;
-  }
-
-  showAll(arr, count);
-  free(arr);
-*/
