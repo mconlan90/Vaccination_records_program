@@ -5,8 +5,6 @@
 #include <stdbool.h>
 #include <time.h>
 
-#define STR_LEN 30
-
 typedef struct {
     char firstName[11];
     char surname[15];
@@ -20,13 +18,6 @@ typedef struct {
     char underCondition[21];
     char id[11];
 } Record;
-
-typedef struct {
-    unsigned long n;
-    void *record;
-} arrSize;
-
-Record tempRecord;
 
 const char *printVendor(enum Vendor);
 
@@ -54,11 +45,7 @@ void sortVacByDate(Record *recordArray, int recordCount);
 
 void viewSeniorHealthCond(Record *, int);
 
-bool dateIsInOrder(char *, char *);
-
 void writeToFile(Record *, int);
-
-void bubbleSort(char [][STR_LEN], size_t);
 
 void swapStrings(char *, char *);
 
@@ -78,56 +65,7 @@ int main() {
 
     Record *recordArray = loadData(&recordCount);
     printf("Read: %d records\n", recordCount);
-/*
-    // printf("New date: %ld\n", removeSpecial(recordArray[0].firstName));
 
-    // printf("\tThe first character of my surname is: %c\n", recordArray[0].surname[0]);
-    //  printf("\tThe first number in my date of birth is: %c\n", recordArray[0].dob[0]);
-
-     if (recordArray[0].surname[0] > recordArray[1].surname[0]) {
-        printf("True.\n");
-    }
-    else {
-        printf("False.\n");
-    }
-
-
-    // The below function is working to an extent - It is at least targeting the correct elements
-    // swap function is not quite correct.
-    // Once this is done, it should be easy to do ALL the bubble sort algorithms.
-    // The function is still breaking when run, but seems to be closer than before.
-
-    for (int pass = 1; pass < recordCount; pass++) {
-        // printf("Pass: %d", pass);
-        for (int rows = 0; rows < recordCount; rows++) {
-            // printf("Row: %d", rows);
-            for (int string = 0; string < sizeof(recordArray->surname); string++) {
-                // printf("Comparing: %s with %s", &recordArray[rows].surname[string], &recordArray[rows + 1].surname[string]);
-                if (recordArray[rows].surname[string] > recordArray[rows + 1].surname[string]) {
-                    /*
-                       // Swapping individual characters
-                       char hold;
-                       hold = recordArray[rows + 1].surname[string];
-                       recordArray[rows + 1].surname[string] = recordArray[rows].surname[string];
-                       recordArray[rows].surname[string] = hold;
-
-                    // Swapping strings - I think this is the way to do it. Find out more!!
-                    char holdString[15];
-                    strcpy(holdString, recordArray[rows + 1].surname);
-                    strcpy(recordArray[rows + 1].surname, recordArray[rows].surname);
-                    strcpy(recordArray[rows + 1].surname, holdString);
-                    // printf("Swapped %c with %c.\n", recordArray[rows].surname[string], recordArray[rows + 1].surname[string]);
-                }
-            }
-        }
-    }
-    for (int i = 0; i < recordCount; i++) {
-        printf("%s %s %s %s %s %s %s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-               printVendor(recordArray[i].vaccine), recordArray[i].vacDate, recordArray[i].underCondition,
-               recordArray[i].id);
-    }
-
-*/
     do {
         displayMenu();
         menuItem = 0;
@@ -194,7 +132,6 @@ Record *loadData(int *countAddress) {
 
     int i = 0;
     Record *recordArray = (Record *) malloc(sizeof(*recordArray));
-    // recordArray = (Record *)malloc(sizeof(Record) * (i + 1));
     while (!feof(fPtr)) {
         Record *record = recordArray + i;
         sscanf(buffer, "%s%s%s%s%s%s%s", record->firstName, record->surname, record->dob, record->vacVendor,
@@ -211,7 +148,6 @@ Record *loadData(int *countAddress) {
     *countAddress = i;
     fclose(fPtr);
     return recordArray;
-    // viewAllRecords(recordArray, i);
 }
 
 void viewAllRecords(Record *recordArray, int recordCount) {
@@ -253,7 +189,6 @@ void addRecord(Record *recordArray) {
 
     int menuItem;
     scanf("%d", &menuItem);
-    // Program breaking at switch statement
     switch (menuItem) {
         case 1:
             rPtr->vaccine = Astra_Zeneca;
@@ -555,8 +490,6 @@ int calculateAge(char *dob) {
     currentYear = timeFormat->tm_year + 1900;
     currentMonth = timeFormat->tm_mon + 1;
     currentDay = timeFormat->tm_mday;
-
-    // printf("Current year: %d\n", currentYear);
 
     int birthDay, birthMonth, birthYear;
     sscanf(dob, "%2d/%2d/%4d", &birthDay, &birthMonth, &birthYear);
