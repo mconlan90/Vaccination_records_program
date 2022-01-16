@@ -32,13 +32,13 @@ const char *printVendor(enum Vendor);
 
 void displayMenu();
 
+void editStudentNum(Record *, char *);
+
 void viewAllRecords(Record *, int);
 
 void addRecord(Record *);
 
 void editRecord(Record *, int);
-
-void editStudentNum(int num);
 
 void percentNonVac(Record *, int);
 
@@ -289,56 +289,30 @@ void addRecord(Record *recordArray) {
 
 
 void editRecord(Record *recordArray, int recordCount) {
-    int count = 0, toEdit;
-
-    FILE *fPtr = fopen("records.txt", "r");
-
-    do {
-        fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-               tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-        if (!feof(fPtr)) {
-            count++;
+    char idToEdit[20];
+    bool foundRecord = false;
+    viewAllRecords(recordArray, recordCount);
+    printf("\n** Enter ID of record you wish to edit: **\n");
+    scanf("%s", idToEdit);
+    for (int i = 0; i < recordCount; i++) {
+        if (strcmp(recordArray[i].id, idToEdit) == 0) {
+            foundRecord = true;
+            editStudentNum(recordArray + i, idToEdit);
         }
-    } while (!feof(fPtr));
-
-    fclose(fPtr);
-
-    if (count > 0) {
-        toEdit = 0;
-        while (toEdit < 1 || toEdit > count) {
-            printf("Student no. to edit? Enter number between 1 and %d:\n", count);
-            scanf("%d", &toEdit);
-        }
-        editStudentNum(toEdit);
-    } else {
-        printf("Nothing to edit.\n");
     }
-    fclose(fPtr);
+    if (!foundRecord) {
+        printf("\t** ID \"%s\" does not exist. **\n", idToEdit);
+    }
 }
 
-void editStudentNum(int num) {
-    int i, fileEnd;
+void editStudentNum(Record *tempRecord, char *idToEdit) {
     char tempString[50];
 
-    FILE *fPtr = fopen("records.txt", "r");
-    FILE *fPtr2 = fopen("temp.txt", "w");
-
-    for (i = 1; i < num; i++) {
-        fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-               tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-        fprintf(fPtr2, "\n%s %s %s %s %s %s %s\n",
-                tempRecord.firstName, tempRecord.surname, tempRecord.dob, printVendor(tempRecord.vaccine),
-                tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-    }
-
-    fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-           tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-
-    printf("\nCurrent details in record %d:\n", num);
+    printf("\nCurrent details in record %s:\n", idToEdit);
     printf("%10s%14s%14s%20s%20s%25s%22s", "First name", "Surname", "D.O.B", "Vaccine vendor",
            "Vaccination date", "Underlying condition", "Student/Staff ID");
-    printf("\n%10s%14s%14s%20s%20s%25s%22s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-           tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
+    printf("\n%10s%14s%14s%20s%20s%25s%22s", tempRecord->firstName, tempRecord->surname, tempRecord->dob,
+           tempRecord->vacVendor, tempRecord->vacDate, tempRecord->underCondition, tempRecord->id);
 
     // Create menu and switch statement to improve usability of this section
     printf("\n\n** Press enter if you do not wish to edit selected data. **\n");
@@ -346,62 +320,43 @@ void editStudentNum(int num) {
     gets(tempString);
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.firstName, tempString);
+        strcpy(tempRecord->firstName, tempString);
     }
     printf("\tSurname: \n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.surname, tempString);
+        strcpy(tempRecord->surname, tempString);
     }
 
     printf("\tD.O.B: \n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.dob, tempString);
+        strcpy(tempRecord->dob, tempString);
     }
 
     printf("\tVaccine vendor:\n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.vacVendor, tempString);
+        strcpy(tempRecord->vacVendor, tempString);
     }
 
     printf("\tVaccination Date: \n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.vacDate, tempString);
+        strcpy(tempRecord->vacDate, tempString);
     }
 
     printf("\tUnderlying condition: \n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.underCondition, tempString);
+        strcpy(tempRecord->underCondition, tempString);
     }
 
     printf("\tStudent/Staff ID: \n");
     gets(tempString);
     if (strlen(tempString) > 0) {
-        strcpy(tempRecord.id, tempString);
+        strcpy(tempRecord->id, tempString);
     }
-
-    fprintf(fPtr2, "\n%s %s %s %s %s %s %s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-            printVendor(tempRecord.vaccine), tempRecord.vacDate, tempRecord.underCondition,
-            tempRecord.id);
-    do {
-        fileEnd = fscanf(fPtr, "%s%s%s%s%s%s%s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-                         tempRecord.vacVendor, tempRecord.vacDate, tempRecord.underCondition, tempRecord.id);
-        if (fileEnd != EOF) {
-            fprintf(fPtr2, "\n%s %s %s %s %s %s %s", tempRecord.firstName, tempRecord.surname, tempRecord.dob,
-                    printVendor(tempRecord.vaccine), tempRecord.vacDate, tempRecord.underCondition,
-                    tempRecord.id);
-        }
-    } while (fileEnd != EOF);
-
-    fclose(fPtr);
-    fclose(fPtr2);
-
-    remove("records.txt");
-    rename("temp.txt", "records.txt");
 }
 
 void displayMenu() {
@@ -435,7 +390,6 @@ void sortVacByName(Record *recordArray, int recordCount) {
 }
 
 void sortNonVacByName(Record *recordArray, int recordCount) {
-
     for (int pass = 0; pass < recordCount - 1; pass++) {
         for (int i = 0; i < recordCount - pass - 1; i++) {
             if (!isInOrder(recordArray[i].surname, recordArray[i + 1].surname)) {
@@ -456,6 +410,7 @@ void sortVacByDate(Record *recordArray, int recordCount) {
 
     for (int pass = 0; pass < recordCount - 1; pass++) {
         for (int i = 0; i < recordCount - pass - 1; i++) {
+            // Refactor into function
             char a[11], b[11];
             strcpy(a, recordArray[i].dob);
             strcpy(b, recordArray[i + 1].dob);
@@ -463,7 +418,7 @@ void sortVacByDate(Record *recordArray, int recordCount) {
             removeSpecial(b, sizeof(b));
             reformatDate(a);
             reformatDate(b);
-            if (!dateIsInOrder(a, b)) {
+            if (!isInOrder(a, b)) {
                 swapStructs(&recordArray[i], &recordArray[i + 1]);
             }
         }
@@ -480,18 +435,6 @@ void sortVacByDate(Record *recordArray, int recordCount) {
 
 bool isInOrder(char *a, char *b) {
     for (size_t j = 0; j < 15; j++) {
-        if (a[j] < b[j]) {
-            return true;
-        }
-        if (a[j] > b[j]) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool dateIsInOrder(char *a, char *b) {
-    for (size_t j = 0; j < 8; j++) {
         if (a[j] < b[j]) {
             return true;
         }
