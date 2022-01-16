@@ -54,6 +54,8 @@ void sortVacByDate(Record *recordArray, int recordCount);
 
 void viewSeniorHealthCond(Record *, int);
 
+bool dateIsInOrder(char *, char *);
+
 void writeToFile(Record *, int);
 
 void bubbleSort(char [][STR_LEN], size_t);
@@ -66,7 +68,7 @@ void swapChars(char *, char *);
 
 void reformatDate(char *);
 
-long removeSpecial(char *dob);
+void removeSpecial(char *, int);
 
 int calculateAge(char *);
 
@@ -418,71 +420,61 @@ void sortVacByName(Record *recordArray, int recordCount) {
 
     for (int pass = 0; pass < recordCount - 1; pass++) {
         for (int i = 0; i < recordCount - pass - 1; i++) {
-            printf("Comparing %d: %s with %s\n", i, recordArray[i].surname, recordArray[i + 1].surname);
             if (!isInOrder(recordArray[i].surname, recordArray[i + 1].surname)) {
                 swapStructs(&recordArray[i], &recordArray[i + 1]);
             }
         }
     }
     for (int i = 0; i < recordCount; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
-               recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
-               recordArray[i].id, recordArray[i].isVaccinated);
+        if (recordArray[i].isVaccinated) {
+            printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
+                   recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
+                   recordArray[i].id, recordArray[i].isVaccinated);
+        }
     }
 }
 
 void sortNonVacByName(Record *recordArray, int recordCount) {
 
-    for (int pass = 0; pass < recordCount; pass++) {
-        for (size_t i = 0; i < recordCount - pass; i++) {
-            for (size_t j = 0; j < 11; j++) {
-                if (recordArray[i].surname[j] < recordArray[i + 1].surname[j]) {
-                    break;
-                }
-                if (recordArray[i].surname[j] > recordArray[i + 1].surname[j]) {
-                    swapStructs(&recordArray[i], &recordArray[i + 1]);
-                    break;
-                }
+    for (int pass = 0; pass < recordCount - 1; pass++) {
+        for (int i = 0; i < recordCount - pass - 1; i++) {
+            if (!isInOrder(recordArray[i].surname, recordArray[i + 1].surname)) {
+                swapStructs(&recordArray[i], &recordArray[i + 1]);
             }
         }
     }
-
     for (int i = 0; i < recordCount; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
-               recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
-               recordArray[i].id, recordArray[i].isVaccinated);
+        if (!recordArray[i].isVaccinated) {
+            printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
+                   recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
+                   recordArray[i].id, recordArray[i].isVaccinated);
+        }
     }
 }
 
 void sortVacByDate(Record *recordArray, int recordCount) {
 
-
-    for (int i = 1; i < recordCount; i++) {
-        removeSpecial(recordArray[i].dob);
-        reformatDate(recordArray[i].dob);
-    }
-
-    // For Loop is causing problems with the DOBs
-    for (int pass = 1; pass < recordCount; pass++) {
-        for (size_t i = 0; i < recordCount - pass; ++i) {
-            for (size_t j = 0; j < 11; ++j) {
-                printf("\t\t\nComparing: %c and %c\n", recordArray[i].dob[j], recordArray[i + 1].dob[j]);
-                if (recordArray[i].dob[j] < recordArray[i + 1].dob[j]) {
-                    break;
-                }
-                if (recordArray[i].dob > recordArray[i + 1].dob) {
-                    swapStructs(&recordArray[i], &recordArray[i + 1]);
-                    break;
-                }
+    for (int pass = 0; pass < recordCount - 1; pass++) {
+        for (int i = 0; i < recordCount - pass - 1; i++) {
+            char a[11], b[11];
+            strcpy(a, recordArray[i].dob);
+            strcpy(b, recordArray[i + 1].dob);
+            removeSpecial(a, sizeof(a));
+            removeSpecial(b, sizeof(b));
+            reformatDate(a);
+            reformatDate(b);
+            if (!dateIsInOrder(a, b)) {
+                swapStructs(&recordArray[i], &recordArray[i + 1]);
             }
         }
     }
-    printf("%10s%14s%14s%20s%20s%25s%22s\n", "First name", "Surname", "D.O.B", "Vaccine vendor",
-           "Vaccination date", "Underlying condition", "Student/Staff ID");
+
     for (int i = 0; i < recordCount; i++) {
-        printf("%10s%14s%14s%20s%20s%25s%22s\n", recordArray[i].firstName, recordArray[i].surname, recordArray[i].dob,
-               printVendor(recordArray[i].vaccine), recordArray[i].vacDate, recordArray[i].underCondition,
-               recordArray[i].id);
+        if (recordArray[i].isVaccinated) {
+            printf("%10s%14s%14s%20s%20s%25s%22s%10i\n", recordArray[i].firstName, recordArray[i].surname,
+                   recordArray[i].dob, recordArray[i].vacVendor, recordArray[i].vacDate, recordArray[i].underCondition,
+                   recordArray[i].id, recordArray[i].isVaccinated);
+        }
     }
 }
 
@@ -498,11 +490,28 @@ bool isInOrder(char *a, char *b) {
     return true;
 }
 
-long removeSpecial(char *dob) {
-    long newDate;
-    char *ptr;
-    newDate = strtol(dob, &ptr, 10);
-    return newDate;
+bool dateIsInOrder(char *a, char *b) {
+    for (size_t j = 0; j < 8; j++) {
+        if (a[j] < b[j]) {
+            return true;
+        }
+        if (a[j] > b[j]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void removeSpecial(char *dob, int size) {
+    for (size_t i = 0; i < size; i++) {
+        if (ispunct((dob[i]))) {
+            for (size_t j = i; j < size; j++) {
+                dob[j] = dob[j + 1];
+            }
+            i--;
+            size--;
+        }
+    }
 }
 
 void reformatDate(char *dob) {
@@ -523,7 +532,6 @@ void swapChars(char *elem1Ptr, char *elem2Ptr) {
 
 
 void swapStructs(Record *structPtr1, Record *structPtr2) {
-    printf("\tSwapping: %s and %s\n", structPtr1->surname, structPtr2->surname);
     swapStrings(structPtr1->firstName, structPtr2->firstName);
     swapStrings(structPtr1->surname, structPtr2->surname);
     swapStrings(structPtr1->dob, structPtr2->dob);
